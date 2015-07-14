@@ -1,16 +1,19 @@
 #include <pebble.h>
-#include <lignite.h>
+#include <data_framework.h>
 #include "main_window.h"
+#include "user_data.h"
 
 int main() {
 	data_framework_init();
-	int resultLoad = data_framework_load_settings();
-	APP_LOG(APP_LOG_LEVEL_INFO, "%d bytes loaded from settings.", resultLoad);
+	user_data_load();
+
     main_window_init();
     window_stack_push(main_window_get_window(), true);
+
     app_event_loop();
+
+	user_data_save();
     main_window_destroy();
-    int resultSave = data_framework_save_settings();
-    APP_LOG(APP_LOG_LEVEL_INFO, "%d bytes saved to settings", resultSave);
+	
     return 1337;
 }

@@ -1,15 +1,14 @@
 #include <pebble.h>
-#include <lignite.h>
+#include <data_framework.h>
 #include "main_window.h"
+#include "user_data.h"
 
 Window *main_window;
 
-void main_window_update_settings(Settings new_settings){
-
-}
-
 void main_window_load(Window *window){
+	if(!user_data_is_logged_in()){
 
+	}
 }
 
 void main_window_unload(Window *window){

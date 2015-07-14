@@ -1,11 +1,11 @@
 {
   "uuid": "2ddd3e89-ca2b-4cb7-a3d9-04a9d6fb1ee8",
-  "shortName": "tv",
-  "longName": "tv",
-  "companyName": "MakeAwesomeHappen",
-  "versionLabel": "0.0",
+  "shortName": "Lignite TV",
+  "longName": "Lignite TV",
+  "companyName": "Lignite",
+  "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt"],
+  "targetPlatforms": ["basalt"],
   "watchapp": {
     "watchface": false
   },
@@ -13,6 +13,8 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+        
+    ]
   }
 }
