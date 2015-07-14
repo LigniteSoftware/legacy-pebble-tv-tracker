@@ -1,5 +1,6 @@
 #pragma once
 #define USER_INFO_PERSIST_KEY 10
+#define AMOUNT_OF_SHOWS_AVAILABLE 6
 
 typedef struct Channel {
     char id[1][6];
@@ -20,6 +21,7 @@ typedef struct UserInfo {
 
 typedef struct UserShows {
     Show current[6];
+    bool exists[6];
 } UserShows;
 
 bool user_data_is_logged_in();

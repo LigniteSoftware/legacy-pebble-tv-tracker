@@ -23,6 +23,7 @@ function requestPin(userToken, minutesToAdd) {
 }
 
 Pebble.addEventListener("ready", function(e){
+    return;
     Pebble.timelineSubscribe('chuck',
       function () {
         console.log('Subscribed to chuck!');

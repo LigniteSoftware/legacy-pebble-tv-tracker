@@ -2,13 +2,16 @@
 #include <data_framework.h>
 #include "main_window.h"
 #include "user_data.h"
+#include "shows_layer.h"
 
 Window *main_window;
 
 void main_window_load(Window *window){
 	if(!user_data_is_logged_in()){
-
+		return;
 	}
+	shows_layer_init();
+	window_stack_push(shows_layer_get_window(), true);
 }
 
 void main_window_unload(Window *window){
