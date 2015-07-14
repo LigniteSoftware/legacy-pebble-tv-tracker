@@ -1,0 +1,11 @@
+#pragma once
+
+#define UUID_ "f5cd1c761c0c"
+#define TOKEN_ "033da1cd67dd"
+#define RESERVED_KEY_1 3049
+#define RESERVED_KEY_2 9569
+
+#define TRIAL_AMOUNT_OF_RESERVED_KEYS 2
+#define TRIAL_SETTINGS_KEY 1000
+#define TRIAL_TIME_LEFT_KEY 1100
+#define TRIAL_LENGTH 60

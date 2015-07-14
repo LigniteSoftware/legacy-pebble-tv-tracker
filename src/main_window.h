@@ -1,6 +1,4 @@
 #pragma once
-#define MAIN_CIRCLE_LOCATION GPoint(72, 84)
-#define MAIN_CIRCLE_RADIUS 30
 
 void main_window_init();
 Window *main_window_get_window();
