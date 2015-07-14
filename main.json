@@ -1,0 +1,9 @@
+{
+  "id": "pin-generic-1",
+  "time": "2015-03-18T15:45:00Z",
+  "layout": {
+    "type": "genericPin",
+    "title": "This is a genericPin!",
+    "tinyIcon": "system://images/NOTIFICATION_FLAG"
+  }
+}
