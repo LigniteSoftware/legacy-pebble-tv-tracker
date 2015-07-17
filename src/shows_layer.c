@@ -2,39 +2,44 @@
 #include "shows_layer.h"
 #include "user_data.h"
 #include "data_framework.h"
+#include "channels_layer.h"
 
 Window *shows_main_window;
 MenuLayer *shows_menu_layer;
 UserShows shows;
 
-uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
+uint16_t shows_menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
 	return 1;
 }
 
-uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+int shows_get_amount_of_items(){
+	int amount = 0;
+	for(int i = 0; i < AMOUNT_OF_SHOWS_AVAILABLE; i++){
+		if(shows.exists[i]){
+			amount++;
+		}
+	}
+	if(amount != 6){
+		amount++;
+	}
+	return amount;
+}
+
+uint16_t shows_menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
 	switch (section_index) {
 		case 0:{
-			int amount = 0;
-			for(int i = 0; i < AMOUNT_OF_SHOWS_AVAILABLE; i++){
-				if(shows.exists[i]){
-					amount++;
-				}
-			}
-			if(amount != 6){
-				amount++;
-			}
-			return amount;
+			return shows_get_amount_of_items();
 		}
 		default:
 			return 0;
 	}
 }
 
-int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+int16_t shows_menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
 	return MENU_CELL_BASIC_HEADER_HEIGHT;
 }
 
-void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
+void shows_menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
 	switch (section_index) {
 		case 0:
 			menu_cell_basic_header_draw(ctx, cell_layer, "Current Shows");
@@ -42,7 +47,7 @@ void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t 
 	}
 }
 
-void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+void shows_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
 	if(shows.exists[cell_index->row]){
 		menu_cell_basic_draw(ctx, cell_layer, shows.current[cell_index->row].name[0], shows.current[cell_index->row].channel.name[0], NULL);
 	}
@@ -51,8 +56,10 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 	}
 }
 
-void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-
+void shows_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
+	if(cell_index->row == shows_get_amount_of_items()-1){
+		window_stack_push(channels_layer_get_window(), true);
+	}
 }
 
 void shows_layer_main_window_load(Window *window) {
@@ -61,12 +68,12 @@ void shows_layer_main_window_load(Window *window) {
 
 	shows_menu_layer = menu_layer_create(bounds);
 	menu_layer_set_callbacks(shows_menu_layer, NULL, (MenuLayerCallbacks){
-		.get_num_sections = menu_get_num_sections_callback,
-		.get_num_rows = menu_get_num_rows_callback,
-		.get_header_height = menu_get_header_height_callback,
-		.draw_header = menu_draw_header_callback,
-		.draw_row = menu_draw_row_callback,
-		.select_click = menu_select_callback,
+		.get_num_sections = shows_menu_get_num_sections_callback,
+		.get_num_rows = shows_menu_get_num_rows_callback,
+		.get_header_height = shows_menu_get_header_height_callback,
+		.draw_header = shows_menu_draw_header_callback,
+		.draw_row = shows_menu_draw_row_callback,
+		.select_click = shows_menu_select_callback,
 	});
 
 	menu_layer_set_click_config_onto_window(shows_menu_layer, window);

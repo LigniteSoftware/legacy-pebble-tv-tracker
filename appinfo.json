@@ -10,11 +10,28 @@
     "watchface": false
   },
   "appKeys": {
-    "dummy": 0
+    "MESSAGE_TYPE": 1000,
+    "T_CHANNEL_SEARCH": 1001,
+    "T_SHOW_SEARCH": 1002,
+    "T_SHOW_SUBSCRIBE": 1003,
+    "T_SHOW_UNSUBSCRIBE": 1004,
+    "username": 0,
+    "accessToken": 1,
+    "channel_name": 10,
+    "channel_id": 11,
+    "channel_number": 12,
+    "show_name": 20,
+    "show_channel_id": 21,
+    "show_new": 22,
+    "show_start": 23,
+    "show_end": 24
   },
+  "capabilities":[
+      "configurable"
+  ],
   "resources": {
     "media": [
-        
+
     ]
   }
 }

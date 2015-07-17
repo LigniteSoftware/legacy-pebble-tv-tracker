@@ -14,6 +14,7 @@ void update_window(){
 			shows_layer_init();
 		}
 		window_stack_push(shows_layer_get_window(), true);
+		window_stack_remove(main_window, false);
 	}
 	else{
 		if(window_stack_get_top_window() != main_window){
@@ -63,6 +64,7 @@ void main_window_init(){
 		.unload = main_window_unload
 	});
 	bluetooth_connection_service_subscribe(bluetooth_handler);
+	user_data_register_login_handler(login_handler);
 }
 
 Window *main_window_get_window(){
