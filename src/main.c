@@ -4,6 +4,7 @@
 #include "user_data.h"
 #include "channels_layer.h"
 #include "new_show_layer.h"
+#include "show_detail_layer.h"
 
 int main() {
 	data_framework_init();
@@ -11,6 +12,7 @@ int main() {
 
 	channels_layer_init();
 	new_shows_layer_init();
+	show_detail_layer_init();
 
     main_window_init();
     window_stack_push(main_window_get_window(), true);

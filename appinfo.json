@@ -31,7 +31,26 @@
   ],
   "resources": {
     "media": [
-
+        {
+            "type":"png",
+            "name":"IMAGE_UP_ICON",
+            "file":"up_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_DOWN_ICON",
+            "file":"down_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_SUB_ICON",
+            "file":"sub_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_UNSUB_ICON",
+            "file":"unsub_icon.png"
+        }
     ]
   }
 }

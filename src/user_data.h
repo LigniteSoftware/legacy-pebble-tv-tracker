@@ -16,9 +16,7 @@ typedef struct Show {
 } Show;
 
 typedef struct LargeShow {
-    bool is_new;
-    char name[1][16];
-    Channel channel;
+    Show base_show;
     time_t start;
     time_t end;
 } LargeShow;

@@ -2,6 +2,7 @@
 #include "new_show_layer.h"
 #include "user_data.h"
 #include "data_framework.h"
+#include "show_detail_layer.h"
 
 Window *new_shows_main_window;
 MenuLayer *new_show_menu_layer;
@@ -13,6 +14,7 @@ Channel channel_location;
 void new_show_layer_add_show(LargeShow show){
 	show_data_has_begun = true;
 	new_shows[show_stack_count] = show;
+	new_shows[show_stack_count].base_show.channel = channel_location;
 	if(show_stack_count+1 < MAX_AMOUNT_OF_SHOWS){
 		show_stack_count++;
 	}
@@ -55,7 +57,7 @@ void new_show_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
 		return;
 	}
 	if(cell_index->row <= (show_stack_count-1)){
-		menu_cell_basic_draw(ctx, cell_layer, new_shows[cell_index->row].name[0], new_shows[cell_index->row].is_new ? "New" : "Old/Rerun", NULL);
+		menu_cell_basic_draw(ctx, cell_layer, new_shows[cell_index->row].base_show.name[0], new_shows[cell_index->row].base_show.is_new ? "New" : "Old/Rerun", NULL);
 	}
 	else{
 		menu_cell_basic_draw(ctx, cell_layer, "That's all.", NULL, NULL);
@@ -63,7 +65,8 @@ void new_show_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, Men
 }
 
 void new_show_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-
+	show_detail_set_large_show(new_shows[cell_index->row]);
+	window_stack_push(show_detail_layer_get_window(), true);
 }
 
 void new_show_set_channel(Channel channel){
