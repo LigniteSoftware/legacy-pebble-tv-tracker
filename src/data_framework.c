@@ -35,10 +35,10 @@ void process_tuple(Tuple *t){
             break;
         case APP_KEY_SHOW_NAME:
             incoming_type = 2;
-            strcpy(data_framework_local_show.base_show.name[0], t->value->cstring);
+            strncpy(data_framework_local_show.base_show.name[0], t->value->cstring, sizeof(data_framework_local_show.base_show.name[0])-1);
             break;
         case APP_KEY_SHOW_CHANNEL_ID:
-            strcpy(data_framework_local_show.base_show.channel.id[0], t->value->cstring);
+            strncpy(data_framework_local_show.base_show.channel.id[0], t->value->cstring, sizeof(data_framework_local_show.base_show.channel.id[0])-1);
             break;
         case APP_KEY_SHOW_NEW:
             data_framework_local_show.base_show.is_new = t->value->int32;

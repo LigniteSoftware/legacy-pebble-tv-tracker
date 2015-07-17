@@ -11,7 +11,7 @@ typedef struct Channel {
 
 typedef struct Show {
     bool is_new;
-    char name[1][16];
+    char name[1][23];
     Channel channel;
 } Show;
 

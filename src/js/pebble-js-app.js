@@ -150,6 +150,22 @@ function subscribe_to_show(show){
     xhr.send("show=" + show + "&username=" + localStorage.getItem("username") + "&accessToken=" + localStorage.getItem("accessToken"));
 }
 
+function getStartFromShow(show){
+    var startString = show.attributes.start;
+    var newStartString = startString.substring(0, 4) + "/" + startString.substring(4, 6) + "/" + startString.substring(6, 8) + " " + startString.substring(8, 10) + ":" + startString.substring(10, 12);
+    var start = new Date(newStartString);
+    console.log("Start: " + start);
+    return start;
+}
+
+function getEndFromShow(show){
+    var endString = show.attributes.stop;
+    var newEndString = endString.substring(0, 4) + "/" + endString.substring(4, 6) + "/" + endString.substring(6, 8) + " " + endString.substring(8, 10) + ":" + endString.substring(10, 12);
+    var end = new Date(newEndString);
+    console.log("End: " + end);
+    return end;
+}
+
 function fetch_all_shows_from_channel(channel_id){
     var xhr = new XMLHttpRequest();
     var url = "http://tv.edwinfinch.com:1000";
@@ -162,10 +178,14 @@ function fetch_all_shows_from_channel(channel_id){
 
             for(var i = 0; i < shows_array.length; i++){
                 var show = shows_array[i];
+                var d = new Date()
+                var n = d.getTimezoneOffset();
                 var object = {
                     "show_name":show.title,
                     "show_channel_id":show.attributes.channel,
-                    "show_new":show.new
+                    "show_new":show.new,
+                    "show_start":getStartFromShow(show).getTime()/1000,
+                    "show_end":getEndFromShow(show).getTime()/1000
                 };
                 console.log("Sending: " + JSON.stringify(object));
                 MessageQueue.sendAppMessage(object);

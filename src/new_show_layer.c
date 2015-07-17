@@ -14,6 +14,7 @@ Channel channel_location;
 void new_show_layer_add_show(LargeShow show){
 	show_data_has_begun = true;
 	new_shows[show_stack_count] = show;
+	APP_LOG(APP_LOG_LEVEL_INFO, "Channel: { name:%s, id:%s, number:%d }", channel_location.name[0], channel_location.id[0], channel_location.number);
 	new_shows[show_stack_count].base_show.channel = channel_location;
 	if(show_stack_count+1 < MAX_AMOUNT_OF_SHOWS){
 		show_stack_count++;

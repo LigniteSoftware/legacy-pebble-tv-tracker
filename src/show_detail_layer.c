@@ -60,16 +60,36 @@ void show_detail_window_load(Window *window){
 	show_name_layer = text_layer_create(GRect(10, 0, 144-ACTION_BAR_WIDTH-20, 168));
 	text_layer_set_text_alignment(show_name_layer, GTextAlignmentCenter);
 	text_layer_set_text(show_name_layer, show_detail_show.base_show.name[0]);
-	text_layer_set_font(show_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+	text_layer_set_font(show_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	text_layer_set_background_color(show_name_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_name_layer));
 
 	show_channel_layer = text_layer_create(GRect(0, 55, 144-ACTION_BAR_WIDTH, 168));
 	text_layer_set_text_alignment(show_channel_layer, GTextAlignmentCenter);
 	text_layer_set_text(show_channel_layer, show_detail_show.base_show.channel.name[0]);
-	text_layer_set_font(show_channel_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+	text_layer_set_font(show_channel_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
 	text_layer_set_background_color(show_channel_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_channel_layer));
+
+	struct tm *start_t = localtime(&show_detail_show.start);
+	static char start_buffer[] = "Hello start how are you";
+	strftime(start_buffer, sizeof(start_buffer), "%D %H:%M", start_t);
+	show_start_layer = text_layer_create(GRect(0, 80, 144-ACTION_BAR_WIDTH, 168));
+	text_layer_set_text_alignment(show_start_layer, GTextAlignmentCenter);
+	text_layer_set_text(show_start_layer, start_buffer);
+	text_layer_set_font(show_start_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+	text_layer_set_background_color(show_start_layer, GColorClear);
+	layer_add_child(window_layer, text_layer_get_layer(show_start_layer));
+
+	struct tm *end_t = localtime(&show_detail_show.end);
+	static char end_buffer[] = "Hello start how are you";
+	strftime(end_buffer, sizeof(end_buffer), "%D %H:%M", end_t);
+	show_end_layer = text_layer_create(GRect(0, 100, 144-ACTION_BAR_WIDTH, 168));
+	text_layer_set_text_alignment(show_end_layer, GTextAlignmentCenter);
+	text_layer_set_text(show_end_layer, end_buffer);
+	text_layer_set_font(show_end_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+	text_layer_set_background_color(show_end_layer, GColorClear);
+	layer_add_child(window_layer, text_layer_get_layer(show_end_layer));
 }
 
 void show_detail_window_unload(Window *window){
