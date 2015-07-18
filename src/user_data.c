@@ -30,11 +30,11 @@ void user_data_update_info(UserInfo new_info){
 void user_data_load(){
 	int info_result = persist_read_data(USER_INFO_PERSIST_KEY, &current_info, sizeof(current_info));
 	int show_result = persist_read_data(USER_SHOWS_PERSIST_KEY, &current_shows, sizeof(current_shows));
-	APP_LOG(APP_LOG_LEVEL_INFO, "Read %d bytes from info, and %d from shows.", info_result, show_result);
+	APP_LOG(APP_LOG_LEVEL_INFO, "Read %d bytes from UserInfo, and %d from shows.", info_result, show_result);
 }
 
 void user_data_save(){
 	int info_result = persist_write_data(USER_INFO_PERSIST_KEY, &current_info, sizeof(current_info));
 	int show_result = persist_write_data(USER_SHOWS_PERSIST_KEY, &current_shows, sizeof(current_shows));
-	APP_LOG(APP_LOG_LEVEL_INFO, "Wrote %d bytes to info, and %d to shows.", info_result, show_result);
+	APP_LOG(APP_LOG_LEVEL_INFO, "Wrote %d bytes to UserInfo, and %d to shows.", info_result, show_result);
 }

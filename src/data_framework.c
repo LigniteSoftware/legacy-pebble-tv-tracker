@@ -62,7 +62,7 @@ void process_tuple(Tuple *t){
 }
 
 void data_framework_status_service_subscribe(ActionStatusCallback callback){
-
+    status_callback = callback;
 }
 
 void data_framework_inbox(DictionaryIterator *iter, void *context){

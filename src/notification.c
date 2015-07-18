@@ -20,7 +20,7 @@ Notification *notification_create(Window *window, const char *title, const char 
 		layer_add_child(new_notif->root_layer, text_layer_get_layer(new_notif->title));
 	}
 
-	new_notif->content = text_layer_init(GRect(15, 84, 119, 168), GTextAlignmentCenter, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+	new_notif->content = text_layer_init(GRect(15, 80, 119, 168), GTextAlignmentCenter, fonts_get_system_font(FONT_KEY_GOTHIC_18));
 	text_layer_set_text(new_notif->content, content);
 	text_layer_set_text_color(new_notif->content, GColorBlack);
 	layer_add_child(new_notif->root_layer, text_layer_get_layer(new_notif->content));

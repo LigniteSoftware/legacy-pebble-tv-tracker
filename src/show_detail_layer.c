@@ -3,6 +3,7 @@
 #include "data_framework.h"
 #include "other.h"
 #include "notification.h"
+#include "user_data.h"
 
 static const LargeShow large_show_blank;
 
@@ -75,7 +76,7 @@ void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
 	show_detail_update();
 }
 
-void subscribe_to_show(char *show){
+void subscribe_to_show(char show[1][23]){
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 
@@ -83,14 +84,19 @@ void subscribe_to_show(char *show){
 		return;
 	}
 
+	UserInfo user_info = user_data_get_user_info();
+	char *token = "";
+	strncpy(token, user_info.accessToken[0], sizeof(user_info.accessToken[0]));
+
 	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_SUBSCRIBE);
-	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show);
-	dict_write_end(iter);
+	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show[0]);
+	dict_write_cstring(iter, APP_KEY_ACCESS_TOKEN, token);
+	dict_write_cstring(iter, APP_KEY_USERNAME, user_info.username[0]);
 
 	app_message_outbox_send();
 }
 
-void unsubscribe_from_show(char *show){
+void unsubscribe_from_show(char show[1][23]){
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 
@@ -98,8 +104,14 @@ void unsubscribe_from_show(char *show){
 		return;
 	}
 
+	UserInfo user_info = user_data_get_user_info();
+	char *token = "";
+	strncpy(token, user_info.accessToken[0], sizeof(user_info.accessToken[0]));
+
 	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_UNSUBSCRIBE);
-	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show);
+	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show[0]);
+	dict_write_cstring(iter, APP_KEY_ACCESS_TOKEN, token);
+	dict_write_cstring(iter, APP_KEY_USERNAME, user_info.username[0]);
 	dict_write_end(iter);
 
 	app_message_outbox_send();
@@ -111,10 +123,10 @@ void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
 	}
 	else{
 		if(show_detail_is_already_subscribed()){
-			unsubscribe_from_show(show_detail_show.base_show.name[0]);
+			unsubscribe_from_show(show_detail_show.base_show.name);
 		}
 		else{
-			subscribe_to_show(show_detail_show.base_show.name[0]);
+			subscribe_to_show(show_detail_show.base_show.name);
 		}
 		return;
 	}
@@ -158,13 +170,15 @@ void show_detail_options_proc(Layer *layer, GContext *ctx){
 void show_detail_status_callback(ActionStatus status){
 	APP_LOG(APP_LOG_LEVEL_INFO, "Got status! %s with error: %s", status.success ? "Good to go" : "Failed", status.error[0]);
 	if(status.success){
-		notification_push(status_success_notification, 3000);
+		notification_push(status_success_notification, 5000);
+		vibes_double_pulse();
 	}
 	else{
 		static char failed_buffer[180];
 		snprintf(failed_buffer, sizeof(failed_buffer), "Action failed with error: %s. Sorry.\n(This will auto-dismiss)", status.error[0]);
 		text_layer_set_text(status_failed_notification->content, failed_buffer);
-		notification_push(status_failed_notification, 7000);
+		notification_push(status_failed_notification, 10000);
+		vibes_long_pulse();
 	}
 }
 
@@ -241,7 +255,7 @@ void show_detail_window_load(Window *window){
 	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_DOWN, down_icon, true);
 
 	status_success_notification = notification_create(window, "Success", "Action completed successfully, just thought I'd let you know.\n(This will auto-dismiss)", success_background);
-	status_failed_notification = notification_create(window, "Failed", NULL, failed_background);
+	status_failed_notification = notification_create(window, "Failed", "Okay", failed_background);
 
 	data_framework_status_service_subscribe(show_detail_status_callback);
 
