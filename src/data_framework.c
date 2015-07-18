@@ -10,6 +10,8 @@ static const Channel wiped_channel;
 UserInfo data_framework_local_info;
 Channel data_framework_local_channel;
 LargeShow data_framework_local_show;
+ActionStatus status;
+ActionStatusCallback status_callback;
 uint8_t incoming_type = -1;
 
 void process_tuple(Tuple *t){
@@ -49,7 +51,18 @@ void process_tuple(Tuple *t){
         case APP_KEY_SHOW_END:
             data_framework_local_show.end = (time_t) t->value->int32;
             break;
+        case APP_KEY_ACTION_STATUS:
+            incoming_type = 3;
+            status.success = value;
+            break;
+        case APP_KEY_ACTION_ERROR:
+            strncpy(status.error[0], t->value->cstring, sizeof(status.error[0])-1);
+            break;
     }
+}
+
+void data_framework_status_service_subscribe(ActionStatusCallback callback){
+
 }
 
 void data_framework_inbox(DictionaryIterator *iter, void *context){
@@ -75,6 +88,9 @@ void data_framework_inbox(DictionaryIterator *iter, void *context){
             break;
         case 2:
             new_show_layer_add_show(data_framework_local_show);
+            break;
+        case 3:
+            status_callback(status);
             break;
     }
 }

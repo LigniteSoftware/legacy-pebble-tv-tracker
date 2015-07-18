@@ -127,34 +127,86 @@ var MessageQueue = function() {
 var API_ROOT = "http://192.73.235.248:5000";
 var CONFIG_URL = "http://tv.edwinfinch.com/index.php"
 
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
+
 function subscribe_to_show(show){
-    Pebble.timelineSubscribe(show,
+    console.log("Subbing to " + replaceAll(" ", "", show));
+    Pebble.timelineSubscribe(replaceAll(" ", "", show),
       function () {
-        console.log('Subscribed to ' + show + '.');
+        console.log('Subscribed to ' + replaceAll(" ", "", show) + '.');
+        var xhr = new XMLHttpRequest();
+        var url = "http://tv.edwinfinch.com:3000";
+        xhr.open('POST', url, true);
+        xhr.onload = function() {
+            if(xhr.readyState == 4 && xhr.status == 200){
+                console.log('Subscribe server response: ' + xhr.responseText);
+                MessageQueue.sendAppMessage({
+                    "ACTION_STATUS": 1
+                });
+            }
+            else if(xhr.status != 200){
+                console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
+                var response = JSON.parse(xhr.responseText);
+                MessageQueue.sendAppMessage({
+                    "ACTION_STATUS": 0,
+                    "ACTION_ERROR": response.error
+                });
+            }
+        };
+        xhr.send("show=" + show + "&username=" + localStorage.getItem("username") + "&accessToken=" + localStorage.getItem("accessToken") + "&subscribe=true");
       },
       function (errorString) {
         console.log('Error subscribing to topic: ' + errorString);
+        MessageQueue.sendAppMessage({
+            "ACTION_STATUS": 0,
+            "ACTION_ERROR": errorString
+        });
       }
     );
-    var xhr = new XMLHttpRequest();
-    var url = "http://tv.edwinfinch.com:3000";
-    xhr.open('POST', url, true);
-    xhr.onload = function() {
-        if(xhr.readyState == 4 && xhr.status == 200){
-            console.log('Subscribe server response: ' + xhr.responseText);
-        }
-        else if(xhr.status != 200){
-            console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
-        }
-    };
-    xhr.send("show=" + show + "&username=" + localStorage.getItem("username") + "&accessToken=" + localStorage.getItem("accessToken"));
+}
+
+function unsubscribe_from_show(show){
+    console.log("Unsubbing from " + replaceAll(" ", "", show));
+    Pebble.timelineUnsubscribe(replaceAll(" ", "", show),
+      function () {
+        console.log('Subscribed to ' + show + '.');
+        var xhr = new XMLHttpRequest();
+        var url = "http://tv.edwinfinch.com:3000";
+        xhr.open('POST', url, true);
+        xhr.onload = function() {
+            if(xhr.readyState == 4 && xhr.status == 200){
+                console.log('Unsubscribe server response: ' + xhr.responseText);
+                MessageQueue.sendAppMessage({
+                    "ACTION_STATUS": 1
+                });
+            }
+            else if(xhr.status != 200){
+                console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
+                var response = JSON.parse(xhr.responseText);
+                MessageQueue.sendAppMessage({
+                    "ACTION_STATUS": 0,
+                    "ACTION_ERROR": response.error
+                });
+            }
+        };
+        xhr.send("show=" + show + "&username=" + localStorage.getItem("username") + "&accessToken=" + localStorage.getItem("accessToken") + "&subscribe=false");
+      },
+      function (errorString) {
+        console.log('Error subscribing to topic: ' + errorString);
+        MessageQueue.sendAppMessage({
+            "ACTION_STATUS": 0,
+            "ACTION_ERROR": errorString
+        });
+      }
+    );
 }
 
 function getStartFromShow(show){
     var startString = show.attributes.start;
     var newStartString = startString.substring(0, 4) + "/" + startString.substring(4, 6) + "/" + startString.substring(6, 8) + " " + startString.substring(8, 10) + ":" + startString.substring(10, 12);
     var start = new Date(newStartString);
-    console.log("Start: " + start);
     return start;
 }
 
@@ -162,7 +214,6 @@ function getEndFromShow(show){
     var endString = show.attributes.stop;
     var newEndString = endString.substring(0, 4) + "/" + endString.substring(4, 6) + "/" + endString.substring(6, 8) + " " + endString.substring(8, 10) + ":" + endString.substring(10, 12);
     var end = new Date(newEndString);
-    console.log("End: " + end);
     return end;
 }
 
@@ -250,9 +301,11 @@ function app_message_handler(e){
             break;
         //Show subscribe
         case 1003:
+            subscribe_to_show(e.payload.show_name);
             break;
         //Show unsubscribe
         case 1004:
+            unsubscribe_from_show(e.payload.show_name);
             break;
     }
 }

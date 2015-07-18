@@ -15,6 +15,8 @@
     "T_SHOW_SEARCH": 1002,
     "T_SHOW_SUBSCRIBE": 1003,
     "T_SHOW_UNSUBSCRIBE": 1004,
+    "ACTION_STATUS": 2000,
+    "ACTION_ERROR": 2001,
     "username": 0,
     "accessToken": 1,
     "channel_name": 10,
@@ -43,13 +45,13 @@
         },
         {
             "type":"png",
-            "name":"IMAGE_SUB_ICON",
-            "file":"sub_icon.png"
+            "name":"IMAGE_HAMBURGER_ICON",
+            "file":"hamburger_icon.png"
         },
         {
             "type":"png",
-            "name":"IMAGE_UNSUB_ICON",
-            "file":"unsub_icon.png"
+            "name":"IMAGE_CHECKMARK_ICON",
+            "file":"checkmark_icon.png"
         },
         {
             "type":"png",

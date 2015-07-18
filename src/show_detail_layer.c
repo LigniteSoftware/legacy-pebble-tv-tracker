@@ -5,15 +5,51 @@
 static const LargeShow large_show_blank;
 
 int show_detail_index = 0;
+bool is_in_action_mode = false;
 
 Window *show_detail_window;
 LargeShow show_detail_show;
 Layer *show_detail_graphics_layer, *show_detail_options_layer;
-GBitmap *subscribe_icon, *unsubscribe_icon, *up_icon, *down_icon, *tv_icon, *start_icon, *end_icon;
+GBitmap *hamburger_icon, *checkmark_icon, *up_icon, *down_icon, *tv_icon, *start_icon, *end_icon;
 ActionBarLayer *show_detail_action_bar;
 TextLayer *show_name_layer, *show_channel_layer, *show_start_layer, *show_end_layer, *show_new_layer;
 BitmapLayer *tv_icon_layer, *end_icon_layer, *start_icon_layer;
 NextShowCallback next_show_callback;
+
+void on_animation_stopped(Animation *anim, bool finished, void *context){
+    #ifdef PBL_BW
+        property_animation_destroy((PropertyAnimation*) anim);
+    #endif
+}
+
+void animate_layer(Layer *layer, GRect *start, GRect *finish, int length, int delay){
+    PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
+
+    animation_set_duration(property_animation_get_animation(anim), length);
+    animation_set_delay(property_animation_get_animation(anim), delay);
+
+	AnimationHandlers handlers = {
+    	.stopped = (AnimationStoppedHandler) on_animation_stopped
+    };
+    animation_set_handlers(property_animation_get_animation(anim), handlers, NULL);
+
+    animation_schedule(property_animation_get_animation(anim));
+}
+
+Animation *animate_layer_return(Layer *layer, GRect *start, GRect *finish, int length, int delay){
+    PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
+
+    animation_set_duration(property_animation_get_animation(anim), length);
+    animation_set_delay(property_animation_get_animation(anim), delay);
+
+	AnimationHandlers handlers = {
+    	.stopped = (AnimationStoppedHandler) on_animation_stopped
+    };
+    animation_set_handlers(property_animation_get_animation(anim), handlers, NULL);
+
+    animation_schedule(property_animation_get_animation(anim));
+    return (Animation*)anim;
+}
 
 void show_detail_register_next_show_callback(NextShowCallback callback){
 	next_show_callback = callback;
@@ -57,8 +93,6 @@ void show_detail_update(){
 	text_layer_set_text(show_name_layer, show_detail_show.base_show.name[0]);
 	text_layer_set_text(show_channel_layer, show_detail_show.base_show.channel.name[0]);
 	text_layer_set_text(show_new_layer, show_detail_show.base_show.is_new ? "New" : "Rerun");
-
-	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_SELECT, show_detail_is_already_subscribed() ? unsubscribe_icon : subscribe_icon, true);
 }
 
 void show_detail_next_show(ClickRecognizerRef referee, void *ctx){
@@ -73,14 +107,69 @@ void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
 	show_detail_update();
 }
 
-void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
+void subscribe_to_show(char *show){
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
 
+	if (iter == NULL) {
+		return;
+	}
+
+	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_SUBSCRIBE);
+	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show);
+	dict_write_end(iter);
+
+	app_message_outbox_send();
+}
+
+void unsubscribe_from_show(char *show){
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+
+	if (iter == NULL) {
+		return;
+	}
+
+	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_UNSUBSCRIBE);
+	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show);
+	dict_write_end(iter);
+
+	app_message_outbox_send();
+}
+
+void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
+	if(!is_in_action_mode){
+		animate_layer(show_detail_options_layer, &GRect(144, 0, 144, 168), &GRect(25, 0, 144, 168), 300, 10);
+	}
+	else{
+		if(show_detail_is_already_subscribed()){
+			unsubscribe_from_show(show_detail_show.base_show.name[0]);
+		}
+		else{
+			subscribe_to_show(show_detail_show.base_show.name[0]);
+		}
+		return;
+	}
+	is_in_action_mode = true;
+	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_SELECT, !is_in_action_mode ? hamburger_icon : checkmark_icon, true);
+}
+
+void back_button_override(ClickRecognizerRef eree, void *ctx){
+	if(is_in_action_mode){
+		animate_layer(show_detail_options_layer, &GRect(25, 0, 144, 168), &GRect(144, 0, 144, 168), 300, 10);
+		is_in_action_mode = false;
+	}
+	else{
+		window_stack_pop(true);
+	}
+	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_SELECT, !is_in_action_mode ? hamburger_icon : checkmark_icon, true);
 }
 
 void show_detail_click_config_provider(void *context) {
 	window_single_click_subscribe(BUTTON_ID_DOWN, show_detail_next_show);
 	window_single_click_subscribe(BUTTON_ID_SELECT, show_detail_sub_action);
 	window_single_click_subscribe(BUTTON_ID_UP, show_detail_previous_show);
+	window_single_click_subscribe(BUTTON_ID_BACK, back_button_override);
 }
 
 void show_detail_graphics_proc(Layer *layer, GContext *ctx){
@@ -89,6 +178,17 @@ void show_detail_graphics_proc(Layer *layer, GContext *ctx){
 	graphics_context_set_fill_color(ctx, GColorBlack);
 	graphics_fill_rect(ctx, GRect(8, 80, 98, 2), 0, GCornerNone);
 	graphics_fill_rect(ctx, GRect(8, 124, 98, 2), 0, GCornerNone);
+}
+
+void show_detail_options_proc(Layer *layer, GContext *ctx){
+	graphics_context_set_fill_color(ctx, GColorBlack);
+	graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_draw_text(ctx, show_detail_is_already_subscribed() ? "Unsubscribe" : "Subscribe", fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(8, 64, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+}
+
+void show_detail_status_callback(ActionStatus status){
+	APP_LOG(APP_LOG_LEVEL_INFO, "Got status! %s with error: %s", status.success ? "Good to go" : "Failed", status.error[0]);
 }
 
 void show_detail_window_load(Window *window){
@@ -100,8 +200,8 @@ void show_detail_window_load(Window *window){
 
 	up_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UP_ICON);
 	down_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DOWN_ICON);
-	subscribe_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SUB_ICON);
-	unsubscribe_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UNSUB_ICON);
+	hamburger_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HAMBURGER_ICON);
+	checkmark_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECKMARK_ICON);
 	tv_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TV_ICON);
 	start_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_START_ICON);
 	end_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_END_ICON);
@@ -158,7 +258,10 @@ void show_detail_window_load(Window *window){
 	action_bar_layer_set_click_config_provider(show_detail_action_bar, show_detail_click_config_provider);
 
 	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_UP, up_icon, true);
+	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_SELECT, hamburger_icon, true);
 	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_DOWN, down_icon, true);
+
+	data_framework_status_service_subscribe(show_detail_status_callback);
 
 	show_detail_update();
 }
@@ -174,8 +277,8 @@ void show_detail_window_unload(Window *window){
 	bitmap_layer_destroy(start_icon_layer);
 	bitmap_layer_destroy(end_icon_layer);
 
-	gbitmap_destroy(subscribe_icon);
-	gbitmap_destroy(unsubscribe_icon);
+	gbitmap_destroy(hamburger_icon);
+	gbitmap_destroy(checkmark_icon);
 	gbitmap_destroy(up_icon);
 	gbitmap_destroy(down_icon);
 	gbitmap_destroy(tv_icon);
