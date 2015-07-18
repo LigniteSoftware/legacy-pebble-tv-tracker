@@ -1,6 +1,8 @@
 #include <pebble.h>
 #include "show_detail_layer.h"
 #include "data_framework.h"
+#include "other.h"
+#include "notification.h"
 
 static const LargeShow large_show_blank;
 
@@ -10,46 +12,12 @@ bool is_in_action_mode = false;
 Window *show_detail_window;
 LargeShow show_detail_show;
 Layer *show_detail_graphics_layer, *show_detail_options_layer;
-GBitmap *hamburger_icon, *checkmark_icon, *up_icon, *down_icon, *tv_icon, *start_icon, *end_icon;
+GBitmap *hamburger_icon, *checkmark_icon, *up_icon, *down_icon, *tv_icon, *start_icon, *end_icon, *success_background, *failed_background;
 ActionBarLayer *show_detail_action_bar;
 TextLayer *show_name_layer, *show_channel_layer, *show_start_layer, *show_end_layer, *show_new_layer;
 BitmapLayer *tv_icon_layer, *end_icon_layer, *start_icon_layer;
 NextShowCallback next_show_callback;
-
-void on_animation_stopped(Animation *anim, bool finished, void *context){
-    #ifdef PBL_BW
-        property_animation_destroy((PropertyAnimation*) anim);
-    #endif
-}
-
-void animate_layer(Layer *layer, GRect *start, GRect *finish, int length, int delay){
-    PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
-
-    animation_set_duration(property_animation_get_animation(anim), length);
-    animation_set_delay(property_animation_get_animation(anim), delay);
-
-	AnimationHandlers handlers = {
-    	.stopped = (AnimationStoppedHandler) on_animation_stopped
-    };
-    animation_set_handlers(property_animation_get_animation(anim), handlers, NULL);
-
-    animation_schedule(property_animation_get_animation(anim));
-}
-
-Animation *animate_layer_return(Layer *layer, GRect *start, GRect *finish, int length, int delay){
-    PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
-
-    animation_set_duration(property_animation_get_animation(anim), length);
-    animation_set_delay(property_animation_get_animation(anim), delay);
-
-	AnimationHandlers handlers = {
-    	.stopped = (AnimationStoppedHandler) on_animation_stopped
-    };
-    animation_set_handlers(property_animation_get_animation(anim), handlers, NULL);
-
-    animation_schedule(property_animation_get_animation(anim));
-    return (Animation*)anim;
-}
+Notification *status_success_notification, *status_failed_notification;
 
 void show_detail_register_next_show_callback(NextShowCallback callback){
 	next_show_callback = callback;
@@ -189,6 +157,15 @@ void show_detail_options_proc(Layer *layer, GContext *ctx){
 
 void show_detail_status_callback(ActionStatus status){
 	APP_LOG(APP_LOG_LEVEL_INFO, "Got status! %s with error: %s", status.success ? "Good to go" : "Failed", status.error[0]);
+	if(status.success){
+		notification_push(status_success_notification, 3000);
+	}
+	else{
+		static char failed_buffer[180];
+		snprintf(failed_buffer, sizeof(failed_buffer), "Action failed with error: %s. Sorry.\n(This will auto-dismiss)", status.error[0]);
+		text_layer_set_text(status_failed_notification->content, failed_buffer);
+		notification_push(status_failed_notification, 7000);
+	}
 }
 
 void show_detail_window_load(Window *window){
@@ -205,6 +182,8 @@ void show_detail_window_load(Window *window){
 	tv_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TV_ICON);
 	start_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_START_ICON);
 	end_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_END_ICON);
+	success_background = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SUCCESS_BACKGROUND);
+	failed_background = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FAILED_BACKGROUND);
 
 	tv_icon_layer = bitmap_layer_create(GRect(4, 2, 24, 24));
 	bitmap_layer_set_bitmap(tv_icon_layer, tv_icon);
@@ -261,6 +240,9 @@ void show_detail_window_load(Window *window){
 	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_SELECT, hamburger_icon, true);
 	action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_DOWN, down_icon, true);
 
+	status_success_notification = notification_create(window, "Success", "Action completed successfully, just thought I'd let you know.\n(This will auto-dismiss)", success_background);
+	status_failed_notification = notification_create(window, "Failed", NULL, failed_background);
+
 	data_framework_status_service_subscribe(show_detail_status_callback);
 
 	show_detail_update();
@@ -284,6 +266,11 @@ void show_detail_window_unload(Window *window){
 	gbitmap_destroy(tv_icon);
 	gbitmap_destroy(start_icon);
 	gbitmap_destroy(end_icon);
+	gbitmap_destroy(success_background);
+	gbitmap_destroy(failed_background);
+
+	notification_destroy(status_success_notification);
+	notification_destroy(status_failed_notification);
 
 	show_detail_show = large_show_blank;
 }

@@ -184,7 +184,7 @@ function unsubscribe_from_show(show){
             }
             else if(xhr.status != 200){
                 console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
-                var response = JSON.parse(xhr.responseText);
+                var response = JSON.parse(xhr.presponseText);
                 MessageQueue.sendAppMessage({
                     "ACTION_STATUS": 0,
                     "ACTION_ERROR": response.error

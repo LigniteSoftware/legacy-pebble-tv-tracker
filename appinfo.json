@@ -67,6 +67,16 @@
             "type":"png",
             "name":"IMAGE_END_ICON",
             "file":"stop_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_SUCCESS_BACKGROUND",
+            "file":"success_background.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_FAILED_BACKGROUND",
+            "file":"failed_background.png"
         }
     ]
   }
