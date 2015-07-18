@@ -9,7 +9,7 @@ TextLayer *error_layer;
 bool bluetooth_good = false, login_good = false;
 
 void update_window(){
-	if(bluetooth_good && login_good){
+	if((bluetooth_good && login_good) || true){
 		if(!shows_layer_get_window()){
 			shows_layer_init();
 		}

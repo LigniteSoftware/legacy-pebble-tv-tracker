@@ -6,6 +6,7 @@
 
 Window *channels_main_window;
 MenuLayer *channels_menu_layer;
+Layer *loading_layer;
 UserShows shows;
 Channel channels[AMOUNT_OF_CHANNELS];
 int channel_stack_count = 0;
@@ -13,16 +14,20 @@ bool channels_data_has_begun = false;
 static char number_buffers[AMOUNT_OF_CHANNELS][4];
 
 void channels_layer_add_channel(Channel channel){
+	memcpy(&channels[channel_stack_count], &channel, sizeof(Channel));
 	channels_data_has_begun = true;
-	channels[channel_stack_count] = channel;
 	if(channel_stack_count+1 < AMOUNT_OF_CHANNELS){
 		channel_stack_count++;
 	}
 	else{
 		APP_LOG(APP_LOG_LEVEL_INFO, "Amount of channels exceeded in stack, sorry");
 	}
-	layer_mark_dirty(menu_layer_get_layer(channels_menu_layer));
+	layer_mark_dirty(loading_layer);
 	menu_layer_reload_data(channels_menu_layer);
+
+	if(channel_stack_count == 102){
+		layer_set_hidden(loading_layer, true);
+	}
 }
 
 uint16_t channels_menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
@@ -84,6 +89,18 @@ void send_channels_request(){
 	app_message_outbox_send();
 }
 
+void loading_proc(Layer *layer, GContext *ctx){
+	graphics_context_set_fill_color(ctx, GColorRed);
+	graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+	graphics_context_set_fill_color(ctx, GColorWhite);
+	graphics_fill_rect(ctx, GRect(20, 114, channel_stack_count, 6), 3, GCornersAll);
+	graphics_draw_text(ctx, "Loading channels", fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(0, 40, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+	static char loading_buffer[] = "200%%";
+	snprintf(loading_buffer, sizeof(loading_buffer), "%d%%", channel_stack_count);
+	graphics_draw_text(ctx, loading_buffer, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(0, 70, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+	graphics_draw_text(ctx, channels[channel_stack_count-1].name[0], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(0, 124, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+}
+
 void channels_layer_main_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	GRect bounds = layer_get_frame(window_layer);
@@ -103,14 +120,18 @@ void channels_layer_main_window_load(Window *window) {
 
 	layer_add_child(window_layer, menu_layer_get_layer(channels_menu_layer));
 
+	loading_layer = layer_create(GRect(0, 0, 144, 168));
 	if(channels[10].number == 0){
-		APP_LOG(APP_LOG_LEVEL_INFO, "Requesting channels...");
 		send_channels_request();
+
+		layer_set_update_proc(loading_layer, loading_proc);
+		layer_add_child(window_layer, loading_layer);
 	}
 }
 
 void channels_layer_main_window_unload(Window *window) {
 	menu_layer_destroy(channels_menu_layer);
+	layer_destroy(loading_layer);
 }
 
 void channels_layer_init() {

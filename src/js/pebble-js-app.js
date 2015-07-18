@@ -172,7 +172,6 @@ function fetch_all_shows_from_channel(channel_id){
     xhr.open('POST', url, true);
     xhr.onload = function() {
         if(xhr.readyState == 4 && xhr.status == 200){
-            console.log('Fetch server response found: ' + xhr.responseText + ' Running through appmessagequene.');
             var object = JSON.parse(xhr.responseText);
             var shows_array = object.programme;
 
@@ -183,11 +182,10 @@ function fetch_all_shows_from_channel(channel_id){
                 var object = {
                     "show_name":show.title,
                     "show_channel_id":show.attributes.channel,
-                    "show_new":show.new,
+                    "show_new":show.new ? 1 : 0,
                     "show_start":getStartFromShow(show).getTime()/1000,
                     "show_end":getEndFromShow(show).getTime()/1000
                 };
-                console.log("Sending: " + JSON.stringify(object));
                 MessageQueue.sendAppMessage(object);
                 //Pebble.sendAppMessage(object);
             }
@@ -205,7 +203,6 @@ function fetch_all_channels(){
     xhr.open('POST', url, true);
     xhr.onload = function() {
         if(xhr.readyState == 4 && xhr.status == 200){
-            console.log('Fetch server response found: ' + xhr.responseText + ' Running through appmessagequene.');
             var object = JSON.parse(xhr.responseText);
             var channels_array = object.channel;
 
@@ -216,7 +213,6 @@ function fetch_all_channels(){
                     "channel_id":channel.attributes.id,
                     "channel_number":parseInt(channel.display_name[1])
                 };
-                console.log("Sending: " + JSON.stringify(object));
                 MessageQueue.sendAppMessage(object);
                 //Pebble.sendAppMessage(object);
             }
@@ -230,7 +226,7 @@ function fetch_all_channels(){
 
 function ready_handler(e){
     //Do something?
-    console.log("Ready for a long beating.");
+    console.log("Yes, I am ready for a long beating. I just hope the poor server is too.");
 }
 
 function config_closed_handler(e){

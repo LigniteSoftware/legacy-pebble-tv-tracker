@@ -25,10 +25,10 @@ void process_tuple(Tuple *t){
             break;
         case APP_KEY_CHANNEL_NAME:
             incoming_type = 1;
-            strcpy(data_framework_local_channel.name[0], t->value->cstring);
+            strncpy(data_framework_local_channel.name[0], t->value->cstring, sizeof(data_framework_local_channel.name[0]));
             break;
         case APP_KEY_CHANNEL_ID:
-            strcpy(data_framework_local_channel.id[0], t->value->cstring);
+            strncpy(data_framework_local_channel.id[0], t->value->cstring, sizeof(data_framework_local_channel.id[0]));
             break;
         case APP_KEY_CHANNEL_NUMBER:
             data_framework_local_channel.number = t->value->int32;
@@ -41,7 +41,7 @@ void process_tuple(Tuple *t){
             strncpy(data_framework_local_show.base_show.channel.id[0], t->value->cstring, sizeof(data_framework_local_show.base_show.channel.id[0])-1);
             break;
         case APP_KEY_SHOW_NEW:
-            data_framework_local_show.base_show.is_new = t->value->int32;
+            data_framework_local_show.base_show.is_new = value;
             break;
         case APP_KEY_SHOW_START:
             data_framework_local_show.start = (time_t) t->value->int32;
@@ -72,7 +72,6 @@ void data_framework_inbox(DictionaryIterator *iter, void *context){
             break;
         case 1:
             channels_layer_add_channel(data_framework_local_channel);
-            data_framework_local_channel = wiped_channel;
             break;
         case 2:
             new_show_layer_add_show(data_framework_local_show);

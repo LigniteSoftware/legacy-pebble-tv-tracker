@@ -50,6 +50,21 @@
             "type":"png",
             "name":"IMAGE_UNSUB_ICON",
             "file":"unsub_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_TV_ICON",
+            "file":"tv_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_START_ICON",
+            "file":"start_icon.png"
+        },
+        {
+            "type":"png",
+            "name":"IMAGE_END_ICON",
+            "file":"stop_icon.png"
         }
     ]
   }
