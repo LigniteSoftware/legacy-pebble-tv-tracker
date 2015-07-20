@@ -74,6 +74,7 @@ LargeShow *new_show_next_show_callback(int index){
 void new_show_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
 	show_detail_set_large_show(new_shows[cell_index->row]);
 	show_detail_register_next_show_callback(new_show_next_show_callback);
+	show_detail_set_min_max(0, show_stack_count);
 	window_stack_push(show_detail_layer_get_window(), true);
 }
 

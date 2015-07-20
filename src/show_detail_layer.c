@@ -4,12 +4,14 @@
 #include "other.h"
 #include "notification.h"
 #include "user_data.h"
+#include "main_window.h"
+#include "shows_layer.h"
 
 static const LargeShow large_show_blank;
 
-int show_detail_index = 0;
-bool is_in_action_mode = false;
-
+int show_detail_index = 0, show_detail_index_max = 0, show_detail_index_min = 0;
+int index_set = 0;
+bool is_in_action_mode = false, was_subscribing = false;
 Window *show_detail_window;
 LargeShow show_detail_show;
 Layer *show_detail_graphics_layer, *show_detail_options_layer;
@@ -30,11 +32,20 @@ bool show_detail_is_already_subscribed(){
 
 void show_detail_set_large_show(LargeShow show){
 	APP_LOG(APP_LOG_LEVEL_INFO, "Got show with name: %s", show.base_show.name[0]);
-	memcpy(&show_detail_show, &show, sizeof(LargeShow));
+	show_detail_show = show;
 }
 
 void show_detail_set_show(Show show){
-	memcpy(&show_detail_show.base_show, &show, sizeof(Show));
+	memcpy(&show_detail_show.base_show, &show, sizeof(show));
+}
+
+void show_detail_set_min_max(int min, int max){
+	show_detail_index_max = max;
+	show_detail_index_min = min;
+}
+
+void show_detail_set_index(int index){
+	index_set = index;
 }
 
 void show_detail_update(){
@@ -62,21 +73,48 @@ void show_detail_update(){
 	text_layer_set_text(show_name_layer, show_detail_show.base_show.name[0]);
 	text_layer_set_text(show_channel_layer, show_detail_show.base_show.channel.name[0]);
 	text_layer_set_text(show_new_layer, show_detail_show.base_show.is_new ? "New" : "Rerun");
+
+	if(show_detail_is_already_subscribed()){
+		text_layer_set_text(show_start_layer, "Subscribed");
+		text_layer_set_text(show_end_layer, "recently");
+		text_layer_set_text(show_new_layer, "All Shows");
+		action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_DOWN, NULL, true);
+		action_bar_layer_set_icon_animated(show_detail_action_bar, BUTTON_ID_UP, NULL, true);
+	}
 }
 
 void show_detail_next_show(ClickRecognizerRef referee, void *ctx){
+	if(show_detail_is_already_subscribed()){
+		return;
+	}
 	show_detail_index++;
+	if(show_detail_index > show_detail_index_max-1){
+		show_detail_index = 0;
+	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
 	show_detail_update();
 }
 
 void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
+	if(show_detail_is_already_subscribed()){
+		return;
+	}
 	show_detail_index--;
+	if(show_detail_index < 0){
+		show_detail_index = show_detail_index_max;
+	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
 	show_detail_update();
 }
 
 void subscribe_to_show(char show[1][23]){
+	if(shows_layer_is_full()){
+		ActionStatus status;
+		strcpy(status.error[0], "No more slots");
+		status.success = false;
+		show_detail_status_callback(status);
+		return;
+	}
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 
@@ -94,6 +132,8 @@ void subscribe_to_show(char show[1][23]){
 	dict_write_cstring(iter, APP_KEY_USERNAME, user_info.username[0]);
 
 	app_message_outbox_send();
+
+	was_subscribing = true;
 }
 
 void unsubscribe_from_show(char show[1][23]){
@@ -115,6 +155,8 @@ void unsubscribe_from_show(char show[1][23]){
 	dict_write_end(iter);
 
 	app_message_outbox_send();
+
+	was_subscribing = false;
 }
 
 void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
@@ -164,14 +206,29 @@ void show_detail_options_proc(Layer *layer, GContext *ctx){
 	graphics_context_set_fill_color(ctx, GColorBlack);
 	graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
 	graphics_context_set_stroke_color(ctx, GColorWhite);
-	graphics_draw_text(ctx, show_detail_is_already_subscribed() ? "Unsubscribe" : "Subscribe", fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(8, 64, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+	graphics_draw_text(ctx, show_detail_is_already_subscribed() ? "Unsubscribe" : shows_layer_is_full() ? "6/6 Full" : "Subscribe", fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(8, 64, 144, 168), GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+}
+
+void send_callback(){
+	if(was_subscribing){
+		APP_LOG(APP_LOG_LEVEL_INFO, "Adding show.");
+		Show newShow;
+		memcpy(&newShow, &show_detail_show.base_show, sizeof(newShow));
+		shows_layer_add_show(newShow);
+	}
+	else{
+		APP_LOG(APP_LOG_LEVEL_INFO, "Was unsubbing");
+		shows_layer_delete(index_set);
+	}
+	window_stack_pop_all(true);
+	window_stack_push(shows_layer_get_window(), true);
 }
 
 void show_detail_status_callback(ActionStatus status){
 	APP_LOG(APP_LOG_LEVEL_INFO, "Got status! %s with error: %s", status.success ? "Good to go" : "Failed", status.error[0]);
 	if(status.success){
-		notification_push(status_success_notification, 5000);
 		vibes_double_pulse();
+		AppTimer *calltimer = app_timer_register(100, send_callback, NULL);
 	}
 	else{
 		static char failed_buffer[180];
@@ -268,10 +325,15 @@ void show_detail_window_unload(Window *window){
 	text_layer_destroy(show_name_layer);
 	text_layer_destroy(show_channel_layer);
 	text_layer_destroy(show_new_layer);
+	text_layer_destroy(show_start_layer);
+	text_layer_destroy(show_end_layer);
 
 	bitmap_layer_destroy(tv_icon_layer);
 	bitmap_layer_destroy(start_icon_layer);
 	bitmap_layer_destroy(end_icon_layer);
+
+	layer_destroy(show_detail_options_layer);
+	layer_destroy(show_detail_graphics_layer);
 
 	gbitmap_destroy(hamburger_icon);
 	gbitmap_destroy(checkmark_icon);
@@ -285,6 +347,9 @@ void show_detail_window_unload(Window *window){
 
 	notification_destroy(status_success_notification);
 	notification_destroy(status_failed_notification);
+
+	is_in_action_mode = false;
+	was_subscribing = false;
 
 	show_detail_show = large_show_blank;
 }

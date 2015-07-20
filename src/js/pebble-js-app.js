@@ -294,7 +294,7 @@ function fetch_all_channels(){
 function ready_handler(e){
     //Do something?
     console.log("Yes, I am ready for a long beating. I just hope the poor server is too.");
-
+/*
     var DEBUG = true;
     if(DEBUG){
         Pebble.timelineSubscriptions(
@@ -316,6 +316,7 @@ function ready_handler(e){
             }
         );
     }
+    */
 }
 
 function config_closed_handler(e){
@@ -327,7 +328,6 @@ function config_closed_handler(e){
 }
 
 function app_message_handler(e){
-    console.log("Got an appmessage");
     switch(e.payload.MESSAGE_TYPE){
         //Channel search
         case 1001:

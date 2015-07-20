@@ -18,6 +18,10 @@ UserShows user_data_get_user_shows(){
 	return current_shows;
 }
 
+void user_data_set_user_shows(UserShows shows){
+	current_shows = shows;
+}
+
 void user_data_register_login_handler(LoginHandler handler){
 	current_login_handler = handler;
 }

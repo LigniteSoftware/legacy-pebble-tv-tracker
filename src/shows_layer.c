@@ -1,12 +1,13 @@
 #include <pebble.h>
 #include "shows_layer.h"
-#include "user_data.h"
 #include "data_framework.h"
 #include "channels_layer.h"
+#include "show_detail_layer.h"
 
 Window *shows_main_window;
 MenuLayer *shows_menu_layer;
 UserShows shows;
+LargeShow test_show;
 
 uint16_t shows_menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
 	return 1;
@@ -48,18 +49,49 @@ void shows_menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uin
 }
 
 void shows_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+	APP_LOG(APP_LOG_LEVEL_INFO, "Good good %s, %s", shows.current[cell_index->row].name[0], shows.current[cell_index->row].channel.name[0]);
 	if(shows.exists[cell_index->row]){
 		menu_cell_basic_draw(ctx, cell_layer, shows.current[cell_index->row].name[0], shows.current[cell_index->row].channel.name[0], NULL);
 	}
 	else{
-		menu_cell_basic_draw(ctx, cell_layer, "Add new show", "Click to find one", NULL);
+		menu_cell_basic_draw(ctx, cell_layer, "Add or browse", NULL, NULL);
 	}
+}
+
+void shows_layer_delete(int index){
+	shows.exists[index] = false;
+	user_data_set_user_shows(shows);
+	menu_layer_reload_data(shows_menu_layer);
+}
+
+LargeShow *get_show(int index){
+	test_show.base_show = shows.current[index];
+	return &test_show;
 }
 
 void shows_menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
 	if(cell_index->row == shows_get_amount_of_items()-1){
 		window_stack_push(channels_layer_get_window(), true);
 	}
+	else{
+		show_detail_set_show(shows.current[cell_index->row]);
+		show_detail_register_next_show_callback(get_show);
+		show_detail_set_index(cell_index->row);
+		window_stack_push(show_detail_layer_get_window(), true);
+	}
+}
+
+void shows_layer_add_show(Show show){
+	APP_LOG(APP_LOG_LEVEL_INFO, "Adding new show.");
+	memcpy(&shows.current[shows_get_amount_of_items()-1], &show, sizeof(Show));
+	shows.exists[shows_get_amount_of_items()-1] = true;
+	APP_LOG(APP_LOG_LEVEL_INFO, "Got %s, %s", show.name[0], show.channel.name[0]);
+	user_data_set_user_shows(shows);
+	menu_layer_reload_data(shows_menu_layer);
+}
+
+bool shows_layer_is_full(){
+	return shows_get_amount_of_items() == AMOUNT_OF_SHOWS_AVAILABLE;
 }
 
 void shows_layer_main_window_load(Window *window) {
@@ -82,6 +114,7 @@ void shows_layer_main_window_load(Window *window) {
 	layer_add_child(window_layer, menu_layer_get_layer(shows_menu_layer));
 
 	shows = user_data_get_user_shows();
+	menu_layer_reload_data(shows_menu_layer);
 }
 
 void shows_layer_main_window_unload(Window *window) {
