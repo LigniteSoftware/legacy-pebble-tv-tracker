@@ -128,41 +128,15 @@ function replaceAll(find, replace, str) {
   return str.replace(new RegExp(find, 'g'), replace);
 }
 
-function subscribe_to_show(show, username, accessToken){
+function subscribe_to_show(show, channel){
     var topic = replaceAll(" ", "", show);
-    console.log("Subscribing to " + topic);
-    Pebble.timelineSubscribe(topic,
+    console.log("Subscribing to " + topic + "__" + channel);
+    Pebble.timelineSubscribe(topic + "__" + channel,
       function () {
         console.log('Subscribed to ' + replaceAll(" ", "", show) + '.');
-        var xhr = new XMLHttpRequest();
-        var url = "http://tv.edwinfinch.com:3000";
-        xhr.open('POST', url, true);
-        xhr.onload = function() {
-            if(xhr.readyState == 4 && xhr.status == 200){
-                console.log('Subscribe server response: ' + xhr.responseText);
-                MessageQueue.sendAppMessage({
-                    "ACTION_STATUS": 1
-                });
-            }
-            else if(xhr.status != 200){
-                console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
-                var response = JSON.parse(xhr.responseText);
-                MessageQueue.sendAppMessage({
-                    "ACTION_STATUS": 0,
-                    "ACTION_ERROR": response.error
-                });
-                Pebble.timelineUnsubscribe(topic,
-                    function () {
-                        console.log('Unsubscribed from ' + topic);
-                    },
-                    function (errorString) {
-                        console.log('Error unsubscribing from topic: ' + errorString + ' well, fuck.');
-                    }
-                );
-            }
-        };
-        var message = "show=" + show + "&username=" + username + "&accessToken=" + accessToken.substring(0, 10) + "&subscribe=true";
-        xhr.send(message);
+        MessageQueue.sendAppMessage({
+            "ACTION_STATUS": 1
+        });
       },
       function (errorString) {
         console.log('Error subscribing to topic: ' + errorString);
@@ -174,40 +148,15 @@ function subscribe_to_show(show, username, accessToken){
     );
 }
 
-function unsubscribe_from_show(show, username, accessToken){
+function unsubscribe_from_show(show){
     var topic = replaceAll(" ", "", show);
-    console.log("Unsubscribing from " + topic);
-    Pebble.timelineUnsubscribe(topic,
+    console.log("Unsubscribing from " + topic + "__" + channel);
+    Pebble.timelineUnsubscribe(topic + "__" + channel,
       function () {
-        console.log('Unsubscribed from ' + topic + '.');
-        var xhr = new XMLHttpRequest();
-        var url = "http://tv.edwinfinch.com:3000";
-        xhr.open('POST', url, true);
-        xhr.onload = function() {
-            if(xhr.readyState == 4 && xhr.status == 200){
-                console.log('Unsubscribe server response: ' + xhr.responseText);
-                MessageQueue.sendAppMessage({
-                    "ACTION_STATUS": 1
-                });
-            }
-            else if(xhr.status != 200){
-                console.log("Error: " + xhr.responseText + " (status code: " + xhr.status + ")");
-                var response = JSON.parse(xhr.presponseText);
-                MessageQueue.sendAppMessage({
-                    "ACTION_STATUS": 0,
-                    "ACTION_ERROR": response.error
-                });
-                Pebble.timelineSubscribe(topic,
-                    function () {
-                        console.log('Subscribed back to ' + topic);
-                    },
-                    function (errorString) {
-                        console.log('Error resubscribing to topic: ' + errorString + ' who knew all could go wrong all at once?');
-                    }
-                );
-            }
-        };
-        xhr.send("show=" + show + "&username=" + username + "&accessToken=" + accessToken.substring(0, 10) + "&subscribe=false");
+        console.log('Unsubscribed from ' + topic + "__" + channel + '.');
+        MessageQueue.sendAppMessage({
+            "ACTION_STATUS": 1
+        });
       },
       function (errorString) {
         console.log('Error subscribing to topic: ' + errorString);
@@ -235,7 +184,7 @@ function getEndFromShow(show){
 
 function fetch_all_shows_from_channel(channel_id){
     var xhr = new XMLHttpRequest();
-    var url = "http://tv.edwinfinch.com:1000";
+    var url = "http://tv.edwinfinch.com:52382";
     xhr.open('POST', url, true);
     xhr.onload = function() {
         if(xhr.readyState == 4 && xhr.status == 200){
@@ -266,7 +215,7 @@ function fetch_all_shows_from_channel(channel_id){
 
 function fetch_all_channels(){
     var xhr = new XMLHttpRequest();
-    var url = "http://tv.edwinfinch.com:1000";
+    var url = "http://tv.edwinfinch.com:52382";
     xhr.open('POST', url, true);
     xhr.onload = function() {
         if(xhr.readyState == 4 && xhr.status == 200){
@@ -292,31 +241,7 @@ function fetch_all_channels(){
 }
 
 function ready_handler(e){
-    //Do something?
-    console.log("Yes, I am ready for a long beating. I just hope the poor server is too.");
-/*
-    var DEBUG = true;
-    if(DEBUG){
-        Pebble.timelineSubscriptions(
-            function (topics) {
-                console.log('Subscribed to ' + topics.join(', '));
-                for(var i = 0; i < topics.length; i++){
-                    Pebble.timelineUnsubscribe(topics[i],
-                        function () {
-                            console.log('Unsubscribed from ' + topics[i]);
-                        },
-                        function (errorString) {
-                            console.log('Error unsubscribing from topic: ' + errorString);
-                        }
-                    );
-                }
-            },
-            function (errorString) {
-                console.log('Error getting subscriptions: ' + errorString);
-            }
-        );
-    }
-    */
+    console.log("I am ready. Thanks for checking on me");
 }
 
 function config_closed_handler(e){
@@ -339,17 +264,17 @@ function app_message_handler(e){
             break;
         //Show subscribe
         case 1003:
-            subscribe_to_show(e.payload.show_name, e.payload.username, e.payload.accessToken);
+            subscribe_to_show(e.payload.show_name, e.payload.channel_name);
             break;
         //Show unsubscribe
         case 1004:
-            unsubscribe_from_show(e.payload.show_name, e.payload.username, e.payload.accessToken);
+            unsubscribe_from_show(e.payload.show_name, e.payload.channel_name);
             break;
     }
 }
 
 function open_config_handler(e){
-    Pebble.openURL("http://tv.edwinfinch.com/index.php");
+    Pebble.openURL("http://tv.edwinfinch.com/v2/support.php");
 }
 
 Pebble.addEventListener("ready", ready_handler);

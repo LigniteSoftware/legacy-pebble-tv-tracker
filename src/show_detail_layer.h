@@ -2,6 +2,11 @@
 #include "user_data.h"
 #include "data_framework.h"
 
+typedef struct TextLayerUpdate {
+    TextLayer *layer;
+    char *new_text;
+} TextLayerUpdate;
+
 typedef LargeShow*(*NextShowCallback)(int index);
 
 void show_detail_register_next_show_callback(NextShowCallback callback);

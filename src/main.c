@@ -10,8 +10,6 @@ int main() {
 	data_framework_init();
 	user_data_load();
 
-	APP_LOG(APP_LOG_LEVEL_WARNING, "Ready for a long beating, JavaScript?");
-
 	channels_layer_init();
 	new_shows_layer_init();
 	show_detail_layer_init();

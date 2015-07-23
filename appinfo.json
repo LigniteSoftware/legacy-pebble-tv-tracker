@@ -3,7 +3,7 @@
   "shortName": "Lignite TV",
   "longName": "Lignite TV",
   "companyName": "Lignite",
-  "versionLabel": "1.0",
+  "versionLabel": "1.4",
   "sdkVersion": "3",
   "targetPlatforms": ["basalt"],
   "watchapp": {
@@ -17,8 +17,6 @@
     "T_SHOW_UNSUBSCRIBE": 1004,
     "ACTION_STATUS": 2000,
     "ACTION_ERROR": 2001,
-    "username": 0,
-    "accessToken": 1,
     "channel_name": 10,
     "channel_id": 11,
     "channel_number": 12,

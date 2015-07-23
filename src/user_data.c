@@ -2,43 +2,61 @@
 #include <data_framework.h>
 #include "user_data.h"
 
-UserInfo current_info;
-UserShows current_shows;
-LoginHandler current_login_handler;
+#define DEBUG
 
-bool user_data_is_logged_in(){
-	return current_info.loggedIn;
-}
+Shows current_shows;
+Channels current_channels;
 
-UserInfo user_data_get_user_info(){
-	return current_info;
-}
-
-UserShows user_data_get_user_shows(){
+Shows user_data_get_shows(){
 	return current_shows;
 }
 
-void user_data_set_user_shows(UserShows shows){
+void user_data_set_shows(Shows shows){
 	current_shows = shows;
 }
 
-void user_data_register_login_handler(LoginHandler handler){
-	current_login_handler = handler;
+uint8_t amount_of_shows_that_exist(Shows shows){
+	int i = 0;
+	while(shows.exists[i]){
+		i++;
+	}
+	return i;
 }
 
-void user_data_update_info(UserInfo new_info){
-	current_info = new_info;
-	current_login_handler(current_info.loggedIn);
+Channels user_data_get_channels(){
+	return current_channels;
+}
+
+void user_data_set_channels(Channels channels){
+	current_channels = channels;
 }
 
 void user_data_load(){
-	int info_result = persist_read_data(USER_INFO_PERSIST_KEY, &current_info, sizeof(current_info));
-	int show_result = persist_read_data(USER_SHOWS_PERSIST_KEY, &current_shows, sizeof(current_shows));
-	APP_LOG(APP_LOG_LEVEL_INFO, "Read %d bytes from UserInfo, and %d from shows.", info_result, show_result);
+	for(int i = 0; i < amount_of_shows_that_exist(current_shows); i++){
+		int show_result = persist_read_data(USER_SHOWS_PERSIST_KEY+i, &current_shows.current[i], sizeof(Show));
+		#ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_INFO, "Read %d bytes from show %d.", show_result, i);
+		#endif
+	}
+	for(int i = 0; i < AMOUNT_OF_CHANNELS_AVAILABLE; i++){
+		int channel_result = persist_read_data(USER_CHANNELS_PERSIST_KEY+i, &current_channels.current[i], sizeof(Channel));
+		#ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_INFO, "Read %d bytes from channel %d", channel_result, i);
+		#endif
+	}
 }
 
 void user_data_save(){
-	int info_result = persist_write_data(USER_INFO_PERSIST_KEY, &current_info, sizeof(current_info));
-	int show_result = persist_write_data(USER_SHOWS_PERSIST_KEY, &current_shows, sizeof(current_shows));
-	APP_LOG(APP_LOG_LEVEL_INFO, "Wrote %d bytes to UserInfo, and %d to shows.", info_result, show_result);
+	for(int i = 0; i < amount_of_shows_that_exist(current_shows); i++){
+		int show_result = persist_write_data(USER_SHOWS_PERSIST_KEY+i, &current_shows.current[i], sizeof(Show));
+		#ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_INFO, "Wrote %d bytes to show %d.", show_result, i);
+		#endif
+	}
+	for(int i = 0; i < AMOUNT_OF_CHANNELS_AVAILABLE; i++){
+		int channel_result = persist_write_data(USER_CHANNELS_PERSIST_KEY+i, &current_channels.current[i], sizeof(Channel));
+		#ifdef DEBUG
+			APP_LOG(APP_LOG_LEVEL_INFO, "Wrote %d bytes to channel %d", channel_result, i);
+		#endif
+	}
 }

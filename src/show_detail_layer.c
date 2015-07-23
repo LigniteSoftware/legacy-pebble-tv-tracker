@@ -48,11 +48,18 @@ void show_detail_set_index(int index){
 	index_set = index;
 }
 
-void show_detail_update(){
+void show_detail_update(bool down){
 	struct tm *start_t = localtime(&show_detail_show.start);
 	static char start_buffer[] = "Hello start how are you";
 	strftime(start_buffer, sizeof(start_buffer), "%D %H:%M", start_t);
-	text_layer_set_text(show_start_layer, start_buffer);
+	TextLayerUpdate start_update = (TextLayerUpdate){
+		.layer = show_start_layer,
+		.new_text = start_buffer
+	};
+	GRect current_frame_start = layer_get_frame(text_layer_get_layer(show_start_layer));
+	GRect new_frame_start = GRect(current_frame_start.origin.x, current_frame_start.origin.y, current_frame_start.size.w, 0);
+	text_layer_set_text(show_start_layer, "Nothing.");
+	animate_layer(text_layer_get_layer(show_start_layer), &current_frame_start, &new_frame_start, 600, 1000, &start_update);
 
 	struct tm *end_t = localtime(&show_detail_show.end);
 	static char end_buffer[] = "Hello start how are you";
@@ -92,7 +99,7 @@ void show_detail_next_show(ClickRecognizerRef referee, void *ctx){
 		show_detail_index = 0;
 	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
-	show_detail_update();
+	show_detail_update(true);
 }
 
 void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
@@ -104,10 +111,10 @@ void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
 		show_detail_index = show_detail_index_max;
 	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
-	show_detail_update();
+	show_detail_update(false);
 }
 
-void subscribe_to_show(char show[1][23]){
+void subscribe_to_show(char show[1][32], char channel[1][10]){
 	if(shows_layer_is_full()){
 		ActionStatus status;
 		strcpy(status.error[0], "No more slots");
@@ -122,21 +129,16 @@ void subscribe_to_show(char show[1][23]){
 		return;
 	}
 
-	UserInfo user_info = user_data_get_user_info();
-	char *token = "";
-	strncpy(token, user_info.accessToken[0], sizeof(user_info.accessToken[0]));
-
 	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_SUBSCRIBE);
 	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show[0]);
-	dict_write_cstring(iter, APP_KEY_ACCESS_TOKEN, token);
-	dict_write_cstring(iter, APP_KEY_USERNAME, user_info.username[0]);
+	dict_write_cstring(iter, APP_KEY_CHANNEL_NAME, channel[0]);
 
 	app_message_outbox_send();
 
 	was_subscribing = true;
 }
 
-void unsubscribe_from_show(char show[1][23]){
+void unsubscribe_from_show(char show[1][32]){
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 
@@ -144,14 +146,8 @@ void unsubscribe_from_show(char show[1][23]){
 		return;
 	}
 
-	UserInfo user_info = user_data_get_user_info();
-	char *token = "";
-	strncpy(token, user_info.accessToken[0], sizeof(user_info.accessToken[0]));
-
 	dict_write_uint16(iter, APP_KEY_MESSAGE_TYPE, APP_KEY_SHOW_UNSUBSCRIBE);
 	dict_write_cstring(iter, APP_KEY_SHOW_NAME, show[0]);
-	dict_write_cstring(iter, APP_KEY_ACCESS_TOKEN, token);
-	dict_write_cstring(iter, APP_KEY_USERNAME, user_info.username[0]);
 	dict_write_end(iter);
 
 	app_message_outbox_send();
@@ -161,14 +157,14 @@ void unsubscribe_from_show(char show[1][23]){
 
 void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
 	if(!is_in_action_mode){
-		animate_layer(show_detail_options_layer, &GRect(144, 0, 144, 168), &GRect(25, 0, 144, 168), 300, 10);
+		animate_layer(show_detail_options_layer, &GRect(144, 0, 144, 168), &GRect(25, 0, 144, 168), 300, 10, NULL);
 	}
 	else{
 		if(show_detail_is_already_subscribed()){
 			unsubscribe_from_show(show_detail_show.base_show.name);
 		}
 		else{
-			subscribe_to_show(show_detail_show.base_show.name);
+			subscribe_to_show(show_detail_show.base_show.name, show_detail_show.base_show.channel.name);
 		}
 		return;
 	}
@@ -178,7 +174,7 @@ void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
 
 void back_button_override(ClickRecognizerRef eree, void *ctx){
 	if(is_in_action_mode){
-		animate_layer(show_detail_options_layer, &GRect(25, 0, 144, 168), &GRect(144, 0, 144, 168), 300, 10);
+		animate_layer(show_detail_options_layer, &GRect(25, 0, 144, 168), &GRect(144, 0, 144, 168), 300, 10, NULL);
 		is_in_action_mode = false;
 	}
 	else{
@@ -316,7 +312,7 @@ void show_detail_window_load(Window *window){
 
 	data_framework_status_service_subscribe(show_detail_status_callback);
 
-	show_detail_update();
+	show_detail_update(true);
 }
 
 void show_detail_window_unload(Window *window){

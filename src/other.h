@@ -1,5 +1,5 @@
 #pragma once
 
 TextLayer *text_layer_init(GRect location, GTextAlignment alignment, GFont *font);
-void animate_layer(Layer *layer, GRect *start, GRect *finish, int length, int delay);
+void animate_layer(Layer *layer, GRect *start, GRect *finish, int length, int delay, void *data);
 Animation *animate_layer_return(Layer *layer, GRect *start, GRect *finish, int length, int delay);

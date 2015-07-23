@@ -6,7 +6,7 @@
 
 Window *shows_main_window;
 MenuLayer *shows_menu_layer;
-UserShows shows;
+Shows shows;
 LargeShow test_show;
 
 uint16_t shows_menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
@@ -60,7 +60,12 @@ void shows_menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIn
 
 void shows_layer_delete(int index){
 	shows.exists[index] = false;
-	user_data_set_user_shows(shows);
+	for(int i = index; i < AMOUNT_OF_SHOWS_AVAILABLE; i++){
+		if(i+1 < AMOUNT_OF_SHOWS_AVAILABLE){
+			shows.exists[i] = shows.exists[i+1];
+		}
+	}
+	user_data_set_shows(shows);
 	menu_layer_reload_data(shows_menu_layer);
 }
 
@@ -86,7 +91,7 @@ void shows_layer_add_show(Show show){
 	memcpy(&shows.current[shows_get_amount_of_items()-1], &show, sizeof(Show));
 	shows.exists[shows_get_amount_of_items()-1] = true;
 	APP_LOG(APP_LOG_LEVEL_INFO, "Got %s, %s", show.name[0], show.channel.name[0]);
-	user_data_set_user_shows(shows);
+	user_data_set_shows(shows);
 	menu_layer_reload_data(shows_menu_layer);
 }
 
@@ -113,7 +118,7 @@ void shows_layer_main_window_load(Window *window) {
 
 	layer_add_child(window_layer, menu_layer_get_layer(shows_menu_layer));
 
-	shows = user_data_get_user_shows();
+	shows = user_data_get_shows();
 	menu_layer_reload_data(shows_menu_layer);
 }
 

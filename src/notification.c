@@ -79,7 +79,7 @@ void notification_push(Notification* notification, unsigned int length){
 	GRect start_frame = layer_get_frame(notification->root_layer);
 	GRect middle_frame = GRect(0, 0, 144, 168);
 	GRect end_frame = GRect(144, 0, 144, 168);
-	animate_layer(notification->root_layer, &start_frame, &middle_frame, 400, 0);
+	animate_layer(notification->root_layer, &start_frame, &middle_frame, 400, 0, NULL);
 	notification->end_animation = animate_layer_return(notification->root_layer, &middle_frame, &end_frame, 400, length-500);
 }
 
