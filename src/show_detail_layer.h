@@ -2,10 +2,12 @@
 #include "user_data.h"
 #include "data_framework.h"
 
-typedef struct TextLayerUpdate {
+typedef struct AppDataPoint {
     TextLayer *layer;
-    char *new_text;
-} TextLayerUpdate;
+    char new_text[1][32];
+    Animation *previous_animation;
+    bool is_name;
+} AppDataPoint;
 
 typedef LargeShow*(*NextShowCallback)(int index);
 

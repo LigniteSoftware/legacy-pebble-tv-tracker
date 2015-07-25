@@ -2,12 +2,8 @@
 #define USER_INFO_PERSIST_KEY 10
 #define USER_SHOWS_PERSIST_KEY 20
 #define USER_CHANNELS_PERSIST_KEY 1000
-#define AMOUNT_OF_SHOWS_AVAILABLE 25
+#define AMOUNT_OF_SHOWS_AVAILABLE 24
 #define AMOUNT_OF_CHANNELS_AVAILABLE 130
-
-//Edwin, why use struct?
-//Because I prefer it, okay? They're nice and clean.
-//Okay.
 
 typedef struct Channel {
     char id[1][6];
@@ -15,21 +11,12 @@ typedef struct Channel {
     uint8_t number;
 } Channel;
 
-typedef struct Channels {
-    Channel current[AMOUNT_OF_CHANNELS_AVAILABLE];
-    uint8_t exists;
-} Channels;
-
 typedef struct Show {
     bool is_new;
     char name[1][32];
     Channel channel;
+    bool exists;
 } Show;
-
-typedef struct Shows {
-    Show current[AMOUNT_OF_SHOWS_AVAILABLE];
-    bool exists[AMOUNT_OF_SHOWS_AVAILABLE];
-} Shows;
 
 typedef struct LargeShow {
     Show base_show;
@@ -37,10 +24,11 @@ typedef struct LargeShow {
     time_t end;
 } LargeShow;
 
-Shows user_data_get_shows();
-void user_data_set_shows(Shows shows);
-uint8_t amount_of_shows_that_exist(Shows shows);
-Channels user_data_get_channels();
-void user_data_set_channels(Channels channels);
+Show user_data_get_show_from_index(int index);
+void user_data_set_show_for_index(Show show, int index);
+uint8_t amount_of_shows_that_exist(Show shows[AMOUNT_OF_SHOWS_AVAILABLE]);
+Channel user_data_get_channel_for_index(int index);
+uint8_t user_data_get_amount_of_channels();
+void user_data_set_channel_for_index(Channel channel, int index, bool first_load);
 void user_data_load();
 void user_data_save();

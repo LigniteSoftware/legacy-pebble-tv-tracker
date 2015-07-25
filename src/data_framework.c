@@ -70,7 +70,7 @@ void data_framework_inbox(DictionaryIterator *iter, void *context){
     }
     switch(incoming_type){
         case 1:
-            channels_layer_add_channel(data_framework_local_channel);
+            channels_layer_add_channel(data_framework_local_channel, true);
             break;
         case 2:
             new_show_layer_add_show(data_framework_local_show);

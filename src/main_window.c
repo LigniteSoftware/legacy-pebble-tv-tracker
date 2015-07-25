@@ -3,19 +3,17 @@
 #include "main_window.h"
 #include "user_data.h"
 #include "shows_layer.h"
+#include "channels_layer.h"
+#include "show_detail_layer.h"
 
 Window *main_window;
 TextLayer *error_layer;
 bool bluetooth_good = false;
 
 void update_window(){
-	if((bluetooth_good)){
-		if(!shows_layer_get_window()){
-			shows_layer_init();
-		}
+	if(bluetooth_good){
 		window_stack_pop_all(true);
 		window_stack_push(shows_layer_get_window(), true);
-		window_stack_remove(main_window, false);
 	}
 	else{
 		if(window_stack_get_top_window() != main_window){

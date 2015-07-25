@@ -1,5 +1,5 @@
 #pragma once
-#define MAX_AMOUNT_OF_SHOWS 75
+#define MAX_AMOUNT_OF_SHOWS 90
 #include "user_data.h"
 
 void new_show_set_channel(Channel channel);

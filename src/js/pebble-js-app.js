@@ -125,47 +125,57 @@ var MessageQueue = function() {
 }();
 
 function replaceAll(find, replace, str) {
+    console.log("replacing all");
   return str.replace(new RegExp(find, 'g'), replace);
 }
 
-function subscribe_to_show(show, channel){
+function handle_show(show, channel, subscribing){
     var topic = replaceAll(" ", "", show);
-    console.log("Subscribing to " + topic + "__" + channel);
-    Pebble.timelineSubscribe(topic + "__" + channel,
-      function () {
-        console.log('Subscribed to ' + replaceAll(" ", "", show) + '.');
-        MessageQueue.sendAppMessage({
-            "ACTION_STATUS": 1
-        });
-      },
-      function (errorString) {
-        console.log('Error subscribing to topic: ' + errorString);
-        MessageQueue.sendAppMessage({
-            "ACTION_STATUS": 0,
-            "ACTION_ERROR": errorString
-        });
-      }
-    );
-}
-
-function unsubscribe_from_show(show){
-    var topic = replaceAll(" ", "", show);
-    console.log("Unsubscribing from " + topic + "__" + channel);
-    Pebble.timelineUnsubscribe(topic + "__" + channel,
-      function () {
-        console.log('Unsubscribed from ' + topic + "__" + channel + '.');
-        MessageQueue.sendAppMessage({
-            "ACTION_STATUS": 1
-        });
-      },
-      function (errorString) {
-        console.log('Error subscribing to topic: ' + errorString);
-        MessageQueue.sendAppMessage({
-            "ACTION_STATUS": 0,
-            "ACTION_ERROR": errorString
-        });
-      }
-    );
+    topic += "__";
+    if(channel === undefined){
+        console.log("Channel is undefined: " + channel);
+        topic += "AE";
+    }
+    else{
+        topic += channel;
+    }
+    topic = topic.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '');
+    if(subscribing){
+        console.log("Subscribing to " + topic);
+        Pebble.timelineSubscribe(topic,
+          function () {
+            console.log('Subscribed to ' + topic + '.');
+            MessageQueue.sendAppMessage({
+                "ACTION_STATUS": 1
+            });
+          },
+          function (errorString) {
+            console.log('Error subscribing to topic: ' + errorString);
+            MessageQueue.sendAppMessage({
+                "ACTION_STATUS": 0,
+                "ACTION_ERROR": errorString
+            });
+          }
+        );
+    }
+    else{
+        console.log("Unsubscribing from " + topic);
+        Pebble.timelineUnsubscribe(topic,
+          function () {
+            console.log('Unsubscribed from ' + topic + '.');
+            MessageQueue.sendAppMessage({
+                "ACTION_STATUS": 1
+            });
+          },
+          function (errorString) {
+            console.log('Error unsubscribing from topic: ' + errorString);
+            MessageQueue.sendAppMessage({
+                "ACTION_STATUS": 0,
+                "ACTION_ERROR": errorString
+            });
+          }
+        );
+    }
 }
 
 function getStartFromShow(show){
@@ -253,6 +263,7 @@ function config_closed_handler(e){
 }
 
 function app_message_handler(e){
+    console.log("Got message with type: " + e.payload.MESSAGE_TYPE);
     switch(e.payload.MESSAGE_TYPE){
         //Channel search
         case 1001:
@@ -264,11 +275,11 @@ function app_message_handler(e){
             break;
         //Show subscribe
         case 1003:
-            subscribe_to_show(e.payload.show_name, e.payload.channel_name);
+            handle_show(e.payload.show_name, e.payload.channel_name, true);
             break;
         //Show unsubscribe
         case 1004:
-            unsubscribe_from_show(e.payload.show_name, e.payload.channel_name);
+            handle_show(e.payload.show_name, e.payload.channel_name, false);
             break;
     }
 }

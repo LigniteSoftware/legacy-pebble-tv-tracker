@@ -3,7 +3,7 @@
   "shortName": "Lignite TV",
   "longName": "Lignite TV",
   "companyName": "Lignite",
-  "versionLabel": "1.4",
+  "versionLabel": "1.5",
   "sdkVersion": "3",
   "targetPlatforms": ["basalt"],
   "watchapp": {

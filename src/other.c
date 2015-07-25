@@ -17,34 +17,17 @@ void on_animation_stopped(Animation *anim, bool finished, void *context){
     #endif
 }
 
-void animation_update_handler(struct Animation *animation, const AnimationProgress distance_normalized){
-	APP_LOG(APP_LOG_LEVEL_INFO, "again");
-	int percent = (distance_normalized/(ANIMATION_NORMALIZED_MAX/100));
-	APP_LOG(APP_LOG_LEVEL_INFO, "Percent: %d", percent);
-	if(animation_get_context(animation)){
-		if(percent > 51){
-			TextLayerUpdate *update = animation_get_context(animation);
-			text_layer_set_text(update->layer, update->new_text);
-		}
-	}
-}
+void animate_layer(Layer *layer, GRect *start, GRect *finish, int duration, int delay){
+	PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
 
-static const PropertyAnimationImplementation implementation = {
-	.base = {
-		.update = animation_update_handler
-	}
-};
-
-void animate_layer(Layer *layer, GRect *start, GRect *finish, int length, int delay, void *data){
-    PropertyAnimation *anim = property_animation_create(&implementation, NULL, NULL, NULL);
-
-    animation_set_duration(property_animation_get_animation(anim), length);
+    animation_set_duration(property_animation_get_animation(anim), duration);
     animation_set_delay(property_animation_get_animation(anim), delay);
 
 	AnimationHandlers handlers = {
     	.stopped = (AnimationStoppedHandler) on_animation_stopped
     };
-	APP_LOG(APP_LOG_LEVEL_INFO, "schedule");
+    animation_set_handlers(property_animation_get_animation(anim), handlers, NULL);
+
     animation_schedule(property_animation_get_animation(anim));
 }
 

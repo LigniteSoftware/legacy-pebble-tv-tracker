@@ -6,6 +6,7 @@
 #include "user_data.h"
 #include "main_window.h"
 #include "shows_layer.h"
+#include "animations.h"
 
 static const LargeShow large_show_blank;
 
@@ -48,38 +49,70 @@ void show_detail_set_index(int index){
 	index_set = index;
 }
 
-void show_detail_update(bool down){
+void show_detail_update(ScrollDirection direction){
 	struct tm *start_t = localtime(&show_detail_show.start);
 	static char start_buffer[] = "Hello start how are you";
 	strftime(start_buffer, sizeof(start_buffer), "%D %H:%M", start_t);
-	TextLayerUpdate start_update = (TextLayerUpdate){
-		.layer = show_start_layer,
-		.new_text = start_buffer
-	};
-	GRect current_frame_start = layer_get_frame(text_layer_get_layer(show_start_layer));
-	GRect new_frame_start = GRect(current_frame_start.origin.x, current_frame_start.origin.y, current_frame_start.size.w, 0);
-	text_layer_set_text(show_start_layer, "Nothing.");
-	animate_layer(text_layer_get_layer(show_start_layer), &current_frame_start, &new_frame_start, 600, 1000, &start_update);
+
+	if(direction != ScrollDirectionNone){
+		AppDataPoint *start_layer_update = malloc(sizeof(AppDataPoint));
+		start_layer_update->layer = show_start_layer;
+		start_layer_update->is_name = false;
+		strcpy(start_layer_update->new_text[0], start_buffer);
+		ask_for_scroll(start_layer_update, direction);
+	}
+	else{
+		text_layer_set_text(show_start_layer, start_buffer);
+	}
 
 	struct tm *end_t = localtime(&show_detail_show.end);
 	static char end_buffer[] = "Hello start how are you";
 	strftime(end_buffer, sizeof(end_buffer), "%D %H:%M", end_t);
-	text_layer_set_text(show_end_layer, end_buffer);
+
+	if(direction != ScrollDirectionNone){
+		AppDataPoint *end_layer_update = malloc(sizeof(AppDataPoint));
+		end_layer_update->layer = show_end_layer;
+		end_layer_update->is_name = false;
+		strcpy(end_layer_update->new_text[0], end_buffer);
+		ask_for_scroll(end_layer_update, direction);
+	}
+	else{
+		text_layer_set_text(show_end_layer, end_buffer);
+	}
 
 	text_layer_set_font(show_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	layer_set_frame(text_layer_get_layer(show_name_layer), GRect(10, 26, 144-ACTION_BAR_WIDTH-20, 54));
 
-	int length = strlen(show_detail_show.base_show.name[0]);
-	if(length < 12){
-		layer_set_frame(text_layer_get_layer(show_name_layer), GRect(10, 36, 144-ACTION_BAR_WIDTH-20, 34));
-		if(length < 10){
-			text_layer_set_font(show_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-		}
+	if(direction != ScrollDirectionNone){
+		AppDataPoint *name_layer_update = malloc(sizeof(AppDataPoint));
+		name_layer_update->layer = show_name_layer;
+		name_layer_update->is_name = true;
+		strcpy(name_layer_update->new_text[0], show_detail_show.base_show.name[0]);
+		ask_for_scroll(name_layer_update, direction);
+	}
+	else{
+		text_layer_set_text(show_name_layer, show_detail_show.base_show.name[0]);
 	}
 
-	text_layer_set_text(show_name_layer, show_detail_show.base_show.name[0]);
 	text_layer_set_text(show_channel_layer, show_detail_show.base_show.channel.name[0]);
-	text_layer_set_text(show_new_layer, show_detail_show.base_show.is_new ? "New" : "Rerun");
+
+	if(direction != ScrollDirectionNone){
+		AppDataPoint *new_layer_update = malloc(sizeof(AppDataPoint));
+		new_layer_update->layer = show_new_layer;
+		new_layer_update->is_name = false;
+		strcpy(new_layer_update->new_text[0], show_detail_show.base_show.is_new ? "New" : "Rerun");
+		ask_for_scroll(new_layer_update, direction);
+	}
+	else{
+		text_layer_set_text(show_new_layer, show_detail_show.base_show.is_new ? "New" : "Rerun");
+		int length = strlen(show_detail_show.base_show.name[0]);
+		if(length < 12){
+			layer_set_frame(text_layer_get_layer(show_name_layer), GRect(10, 36, 144-ACTION_BAR_WIDTH-20, 34));
+			if(length < 10){
+				text_layer_set_font(show_name_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+			}
+		}
+	}
 
 	if(show_detail_is_already_subscribed()){
 		text_layer_set_text(show_start_layer, "Subscribed");
@@ -99,7 +132,7 @@ void show_detail_next_show(ClickRecognizerRef referee, void *ctx){
 		show_detail_index = 0;
 	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
-	show_detail_update(true);
+	show_detail_update(ScrollDirectionUp);
 }
 
 void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
@@ -111,7 +144,7 @@ void show_detail_previous_show(ClickRecognizerRef referee, void *ctx){
 		show_detail_index = show_detail_index_max;
 	}
 	memcpy(&show_detail_show, next_show_callback(show_detail_index), sizeof(LargeShow));
-	show_detail_update(false);
+	show_detail_update(ScrollDirectionDown);
 }
 
 void subscribe_to_show(char show[1][32], char channel[1][10]){
@@ -157,7 +190,7 @@ void unsubscribe_from_show(char show[1][32]){
 
 void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
 	if(!is_in_action_mode){
-		animate_layer(show_detail_options_layer, &GRect(144, 0, 144, 168), &GRect(25, 0, 144, 168), 300, 10, NULL);
+		animate_layer(show_detail_options_layer, &GRect(144, 0, 144, 168), &GRect(25, 0, 144, 168), 300, 10);
 	}
 	else{
 		if(show_detail_is_already_subscribed()){
@@ -174,7 +207,7 @@ void show_detail_sub_action(ClickRecognizerRef referee, void *ctx){
 
 void back_button_override(ClickRecognizerRef eree, void *ctx){
 	if(is_in_action_mode){
-		animate_layer(show_detail_options_layer, &GRect(25, 0, 144, 168), &GRect(144, 0, 144, 168), 300, 10, NULL);
+		animate_layer(show_detail_options_layer, &GRect(25, 0, 144, 168), &GRect(144, 0, 144, 168), 300, 10);
 		is_in_action_mode = false;
 	}
 	else{
@@ -238,10 +271,6 @@ void show_detail_status_callback(ActionStatus status){
 void show_detail_window_load(Window *window){
 	Layer *window_layer = window_get_root_layer(window);
 
-	show_detail_graphics_layer = layer_create(GRect(0, 0, 144, 168));
-	layer_set_update_proc(show_detail_graphics_layer, show_detail_graphics_proc);
-	layer_add_child(window_layer, show_detail_graphics_layer);
-
 	up_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UP_ICON);
 	down_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DOWN_ICON);
 	hamburger_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HAMBURGER_ICON);
@@ -251,10 +280,6 @@ void show_detail_window_load(Window *window){
 	end_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_END_ICON);
 	success_background = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SUCCESS_BACKGROUND);
 	failed_background = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FAILED_BACKGROUND);
-
-	tv_icon_layer = bitmap_layer_create(GRect(4, 2, 24, 24));
-	bitmap_layer_set_bitmap(tv_icon_layer, tv_icon);
-	layer_add_child(window_layer, bitmap_layer_get_layer(tv_icon_layer));
 
 	start_icon_layer = bitmap_layer_create(GRect(6, 86, 14, 14));
 	bitmap_layer_set_bitmap(start_icon_layer, start_icon);
@@ -270,6 +295,14 @@ void show_detail_window_load(Window *window){
 	text_layer_set_background_color(show_name_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_name_layer));
 
+	show_detail_graphics_layer = layer_create(GRect(0, 0, 144, 168));
+	layer_set_update_proc(show_detail_graphics_layer, show_detail_graphics_proc);
+	layer_add_child(window_layer, show_detail_graphics_layer);
+
+	tv_icon_layer = bitmap_layer_create(GRect(4, 2, 24, 24));
+	bitmap_layer_set_bitmap(tv_icon_layer, tv_icon);
+	layer_add_child(window_layer, bitmap_layer_get_layer(tv_icon_layer));
+
 	show_channel_layer = text_layer_create(GRect(14, 4, 144-ACTION_BAR_WIDTH-14, 168));
 	text_layer_set_text_alignment(show_channel_layer, GTextAlignmentCenter);
 	text_layer_set_font(show_channel_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
@@ -277,19 +310,19 @@ void show_detail_window_load(Window *window){
 	text_layer_set_background_color(show_channel_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_channel_layer));
 
-	show_start_layer = text_layer_create(GRect(10, 84, 144-ACTION_BAR_WIDTH-10, 168));
+	show_start_layer = text_layer_create(GRect(10, 84, 144-ACTION_BAR_WIDTH-10, 16));
 	text_layer_set_text_alignment(show_start_layer, GTextAlignmentCenter);
 	text_layer_set_font(show_start_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
 	text_layer_set_background_color(show_start_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_start_layer));
 
-	show_end_layer = text_layer_create(GRect(10, 104, 144-ACTION_BAR_WIDTH-10, 168));
+	show_end_layer = text_layer_create(GRect(10, 104, 144-ACTION_BAR_WIDTH-10, 16));
 	text_layer_set_text_alignment(show_end_layer, GTextAlignmentCenter);
 	text_layer_set_font(show_end_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
 	text_layer_set_background_color(show_end_layer, GColorClear);
 	layer_add_child(window_layer, text_layer_get_layer(show_end_layer));
 
-	show_new_layer = text_layer_create(GRect(0, 126, 144-ACTION_BAR_WIDTH, 168));
+	show_new_layer = text_layer_create(GRect(0, 126, 144-ACTION_BAR_WIDTH, 26));
 	text_layer_set_text_alignment(show_new_layer, GTextAlignmentCenter);
 	text_layer_set_font(show_new_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	text_layer_set_background_color(show_new_layer, GColorClear);
@@ -312,7 +345,7 @@ void show_detail_window_load(Window *window){
 
 	data_framework_status_service_subscribe(show_detail_status_callback);
 
-	show_detail_update(true);
+	show_detail_update(ScrollDirectionNone);
 }
 
 void show_detail_window_unload(Window *window){
